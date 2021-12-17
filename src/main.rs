@@ -1,7 +1,9 @@
-#[macro_use]
+use std::mem;
 
+#[macro_use]
 extern crate bmp;
 extern crate nalgebra;
+
 use nalgebra::Pnt3;
 use nalgebra::Vec3;
 use bmp::Image;
@@ -40,21 +42,49 @@ impl OrthoCamera {
 }
 
 struct Sphere {
-  x: f64,
-  y: f64,
-  z: f64,
+  pos: nalgebra::Pnt3<f64>,
   radius: f64
+}
+
+impl Sphere {
+  fn new(pos: nalgebra::Pnt3<f64>, radius: f64) -> Sphere {
+    Sphere {
+      pos: pos,
+      radius: radius
+    }
+  }
+
+  fn intersection(primary_ray: Ray) -> Vec3<f64> {
+    let t0: f64;
+    let t1: f64;
+
+    let center = Vec3::new(pos);
+
+    return center;
+  }
+
+  fn solve_quadratic(a: f64, b: f64, c: f64, x0: &mut f64, x1: &mut f64) -> bool {
+    let discr: f64 = b * b - 4.0 * a * c;
+    if discr < 0.0 {
+      return false;
+    } else if discr == 0.0 {
+      *x0 = - 0.5 * b / a;
+      *x1 = - 0.5 * b / a;
+    } else {
+      let q: f64 = if b > 0.0 { -0.5 * (b + f64::sqrt(discr)) } else { -0.5 * (b - f64::sqrt(discr)) };
+      *x0 = q / a;
+      *x1 = c / q;
+    }
+    if x0 > x1 { mem::swap(x0, x1); }
+    return true;
+  }
 }
 
 fn main() {
   let mut camera = OrthoCamera::new(Pnt3::new(0.0, 0.0, 0.0));
   let mut spheres = Vec::new();
-  spheres.push(Sphere {
-    x: 0.0,
-    y: 0.0,
-    z: 100.0,
-    radius: 5.0
-  });
+
+  spheres.push(Sphere::new(Pnt3::new(0.0, 0.0, 20.0), 5.0));
 
   for (x, y) in camera.plane.coordinates() {
     camera.plane.set_pixel(x, y, px!(x, y, 200));
