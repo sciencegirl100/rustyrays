@@ -85,9 +85,9 @@ fn main() {
     let mut rng = rand::thread_rng();
     let x: f64 = rng.gen::<f64>() * 250.0;
     let y: f64 = rng.gen::<f64>() * 250.0;
-    let z: f64 = rng.gen::<f64>() * 50.0;
-    let radius: f64 = rng.gen::<f64>() * 25.0;
-    spheres.push(Sphere::new(Vec3::new(x + 25.0, y + 25.0, z + 10.0), radius));
+    let z: f64 = rng.gen::<f64>() * 250.0;
+    let radius: f64 = rng.gen::<f64>() * 40.0;
+    spheres.push(Sphere::new(Vec3::new(x, y, 1000.0), radius));
   }
 
   for (x, y) in camera.plane.coordinates() {
@@ -99,12 +99,15 @@ fn main() {
       let ray = Ray::new(Vec3::new(x as f64, y as f64, camera.pos.z as f64), Vec3::new(0.0, 0.0, 1.0));
       let mut t1 = 0.0;
       let mut t2 = 0.0;
+      let mut tfront = 0.0;
       let result = sphere.intersection(&ray, &mut t1, &mut t2);
-      let hit1 = ray.at(t1);
-      let hit2 = ray.at(t2);
-      let normal = hit1 - sphere.pos;
+
+      tfront = if t2 > t1 { t1 } else { t2 };
+
+      let hit = ray.at(tfront);
+      let normal = hit - sphere.pos;
       //let angle = abs(&hit1.normalize().dot(&normal.normalize()));
-      let angle = f64::abs(f64::acos(hit1.dot(&normal)/(hit1.norm()*normal.norm())));
+      let angle = f64::abs(f64::acos(hit.dot(&normal)/(hit.norm()*normal.norm())));
       if result == true {
         camera.plane.set_pixel(x, y, px!(80.0 * angle, 80.0 * angle, 80.0 * angle));
       }
