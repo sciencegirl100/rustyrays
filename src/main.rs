@@ -2,8 +2,10 @@ use std::mem;
 
 #[macro_use]
 extern crate bmp;
+extern crate rand;
 extern crate nalgebra;
 
+use rand::Rng;
 use nalgebra::*;
 use bmp::Image;
 use bmp::Pixel;
@@ -55,7 +57,7 @@ impl Sphere {
 
   // Implemented from
   // http://kylehalladay.com/blog/tutorial/math/2013/12/24/Ray-Sphere-Intersection.html
-  fn intersection(&self, primary_ray: Ray, t1: &mut f64, t2: &mut f64) -> bool {
+  fn intersection(&self, primary_ray: &Ray, t1: &mut f64, t2: &mut f64) -> bool {
     let l = self.pos - primary_ray.pos;
     let tc = dot(&l, &primary_ray.dir);
 
@@ -79,30 +81,35 @@ fn main() {
   let mut camera = OrthoCamera::new(Vec3::new(0.0, 0.0, 0.0));
   let mut spheres = Vec::new();
 
-  spheres.push(Sphere::new(Vec3::new(100.0, 100.0, 50.0), 25.0));
+  for i in 0..15 {
+    let mut rng = rand::thread_rng();
+    let x: f64 = rng.gen::<f64>() * 250.0;
+    let y: f64 = rng.gen::<f64>() * 250.0;
+    let z: f64 = rng.gen::<f64>() * 50.0;
+    let radius: f64 = rng.gen::<f64>() * 25.0;
+    spheres.push(Sphere::new(Vec3::new(x + 25.0, y + 25.0, z + 10.0), radius));
+  }
 
   for (x, y) in camera.plane.coordinates() {
-    println!("Camera coords: {}. {}", x, y);
+    camera.plane.set_pixel(x, y, px!(0, 0, 0));
+  }
+
+  for (x, y) in camera.plane.coordinates() {
     for sphere in &spheres {
       let ray = Ray::new(Vec3::new(x as f64, y as f64, camera.pos.z as f64), Vec3::new(0.0, 0.0, 1.0));
       let mut t1 = 0.0;
       let mut t2 = 0.0;
-      let result = sphere.intersection(ray, &mut t1, &mut t2);
+      let result = sphere.intersection(&ray, &mut t1, &mut t2);
+      let hit1 = ray.at(t1);
+      let hit2 = ray.at(t2);
+      let normal = hit1 - sphere.pos;
+      //let angle = abs(&hit1.normalize().dot(&normal.normalize()));
+      let angle = f64::abs(f64::acos(hit1.dot(&normal)/(hit1.norm()*normal.norm())));
       if result == true {
-        camera.plane.set_pixel(x, y, px!(255, 255, 255));
-      } else {
-        camera.plane.set_pixel(x, y, px!(0, 0, 0));
+        camera.plane.set_pixel(x, y, px!(80.0 * angle, 80.0 * angle, 80.0 * angle));
       }
     }
   }
 
   let _ = camera.plane.save("img.bmp");
-
-
-  // Testing rays
-  let ray = Ray::new(Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 0.25, 0.8));
-
-  let result = ray.at(5.0);
-
-  println!("Result: {}", result);
 }

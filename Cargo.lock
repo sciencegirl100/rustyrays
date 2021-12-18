@@ -183,6 +183,7 @@ version = "0.1.0"
 dependencies = [
  "bmp",
  "nalgebra",
+ "rand 0.3.23",
 ]
 
 [[package]]

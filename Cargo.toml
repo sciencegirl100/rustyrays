@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 bmp = "*"
 nalgebra = "0.7.0"
+rand = "*"
