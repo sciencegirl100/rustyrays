@@ -97,17 +97,18 @@ impl Sphere {
 fn main() {
   let mut camera = OrthoCamera::new(Vec3::new(0.0, 0.0, 0.0));
   let mut spheres = Vec::new();
-  let light = LightSrc::new(Vec3::new(120.0, 0.0, 100.0), 500.0);
+  let light = LightSrc::new(Vec3::new(125.0, 0.0, 100.0), 500.0);
 
-  spheres.push(Sphere::new(Vec3::new(125.0, 50.0, 100.0), 20.0));
-  spheres.push(Sphere::new(Vec3::new(150.0, 150.0, 100.0), 40.0));
+  spheres.push(Sphere::new(Vec3::new(125.0, 75.0, 100.0), 20.0));
+  spheres.push(Sphere::new(Vec3::new(125.0, 175.0, 100.0), 60.0));
+//  spheres.push(Sphere::new(Vec3::new(0.0, 0.0, 100.0), 10.0));
 //  for i in 0..15 {
 //    let mut rng = rand::thread_rng();
 //    let x: f64 = rng.gen::<f64>() * 250.0;
 //    let y: f64 = rng.gen::<f64>() * 250.0;
 //    let z: f64 = rng.gen::<f64>() * 250.0;
 //    let radius: f64 = rng.gen::<f64>() * 40.0;
-//    spheres.push(Sphere::new(Vec3::new(x, y, 1000.0), radius));
+//    spheres.push(Sphere::new(Vec3::new(x, y, 100.0), radius));
 //  }
 
   for (x, y) in camera.plane.coordinates() {
@@ -125,13 +126,33 @@ fn main() {
           let hit = ray.at(distance);
           let normal = sphere.pos - hit;
           let light_vec = hit - light.pos;
-          let angle = f64::abs(f64::acos(hit.dot(&normal)/(hit.norm()*normal.norm())));
 
-          let light_power = (normal.normalize().dot(&light_vec.normalize()) as f64).max(0.0) * light.intensity;
-          let light_reflected = 2.0 / std::f64::consts::PI;
-          let light_calc = light_power * light_reflected;
-          println!("{}", light_calc);
-          camera.plane.set_pixel(x, y, px!(light_calc, light_calc, light_calc));
+          let shadow_ray = Ray {
+            pos: hit + (normal.normalize() * 1e-03),
+            dir: -light_vec.normalize()
+          };
+
+          let mut in_light = false;
+          for shadow_sphere in &spheres {
+            if shadow_sphere.intersection(&shadow_ray).is_none() {
+              in_light = true;
+            }
+
+            if in_light {
+              println!("in light");
+            }
+
+            let light_intensity = if in_light { light.intensity } else { 0.0 };
+            let light_power = (normal.normalize().dot(&light_vec.normalize()) as f64).max(0.0) * light_intensity;
+            let light_reflected = 2.0 / std::f64::consts::PI;
+            let light_calc = light_power * light_reflected;
+            camera.plane.set_pixel(x, y, px!(light_calc, light_calc, light_calc));
+
+            if !in_light {
+              //camera.plane.set_pixel(x, y, px!(255, 0, 0));
+            }
+          }
+
         }
         None => { },
       }
