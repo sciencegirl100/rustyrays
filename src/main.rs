@@ -119,24 +119,6 @@ fn get_color(camera: &OrthoCamera, ray: &Ray, intersection: &Intersection) -> f6
   let light_power = (normal.normalize().dot(&light_vec.normalize()) as f64).max(0.0) * light_intensity;
   let light_reflected = 2.0 / std::f64::consts::PI;
   return light_power * light_reflected;
-
-//          let shadow_ray = Ray {
-//            pos: hit + (normal.normalize() * 1e-03),
-//            dir: -light_vec.normalize()
-//          };
-//
-//          let mut in_light = false;
-//          let mut light_calc = 0.0;
-//          for shadow_sphere in &spheres {
-//            if shadow_sphere.intersection(&shadow_ray).is_none() {
-//              in_light = true;
-//            }
-//
-//            let light_intensity = if in_light { light.intensity } else { 0.0 };
-//            let light_power = (normal.normalize().dot(&light_vec.normalize()) as f64).max(0.0) * light_intensity;
-//            let light_reflected = 2.0 / std::f64::consts::PI;
-//            light_calc = light_power * light_reflected;
-//          }
 }
 
 fn main() {
@@ -144,20 +126,20 @@ fn main() {
     pos: Vec3::new(0.0, 0.0, 0.0),
     plane: Image::new(256,256),
     spheres: Vec::new(),
-    light: LightSrc::new(Vec3::new(125.0, -100.0, 100.0), 500.0)
+    light: LightSrc::new(Vec3::new(125.0, -100.0, 100.0), 20.0)
   };
 
   camera.spheres.push(Sphere::new(Vec3::new(125.0, 75.0, 100.0), 20.0));
   camera.spheres.push(Sphere::new(Vec3::new(115.0, 175.0, 100.0), 60.0));
   camera.spheres.push(Sphere::new(Vec3::new(0.0, 0.0, 100.0), 10.0));
-//  for i in 0..15 {
-//    let mut rng = rand::thread_rng();
-//    let x: f64 = rng.gen::<f64>() * 250.0;
-//    let y: f64 = rng.gen::<f64>() * 250.0;
-//    let z: f64 = rng.gen::<f64>() * 250.0;
-//    let radius: f64 = rng.gen::<f64>() * 40.0;
-//    spheres.push(Sphere::new(Vec3::new(x, y, 100.0), radius));
-//  }
+  for i in 0..15 {
+    let mut rng = rand::thread_rng();
+    let x: f64 = rng.gen::<f64>() * 250.0;
+    let y: f64 = rng.gen::<f64>() * 250.0;
+    let z: f64 = rng.gen::<f64>() * 250.0;
+    let radius: f64 = rng.gen::<f64>() * 40.0;
+    camera.spheres.push(Sphere::new(Vec3::new(x, y, 100.0), radius));
+  }
 
   for (x, y) in camera.plane.coordinates() {
     camera.plane.set_pixel(x, y, px!(0, y, 0));
@@ -165,8 +147,25 @@ fn main() {
     let result = camera.trace(&ray);
     match result {
       Some(intersection) => {
+        let hit_point = ray.at(intersection.distance);
+        let normal = hit_point - intersection.object.pos;
+        let light_dir = hit_point - camera.light.pos;
         let light_color = get_color(&camera, &ray, &intersection);
-        camera.plane.set_pixel(x, y, px!(light_color, 0, 0))
+        let shadow_ray = Ray {
+          pos: hit_point + (normal.normalize()),
+          dir: -light_dir.normalize()
+        };
+
+        println!("{} {}", shadow_ray.pos, shadow_ray.dir);
+
+        let in_light = camera.trace(&shadow_ray).is_none();
+        let light_intensity = if in_light { camera.light.intensity } else { 0.0 };
+        if in_light {
+          println!("in light");
+        } else {
+          println!("in shadow");
+        }
+        camera.plane.set_pixel(x, y, px!(light_color * light_intensity, 0, 0))
       },
       None => { }
     }
