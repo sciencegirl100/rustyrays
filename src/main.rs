@@ -83,13 +83,13 @@ impl Material {
 
 
 struct Color {
-  red: f32,
-  green: f32,
-  blue: f32
+  red: f64,
+  green: f64,
+  blue: f64
 }
 
 impl Color {
-  fn new(red: f32, green: f32, blue: f32) -> Color {
+  fn new(red: f64, green: f64, blue: f64) -> Color {
     Color {
       red: red,
       green: green,
@@ -145,16 +145,18 @@ impl<'a> Intersection<'a> {
 }
 
 
-fn get_color(camera: &OrthoCamera, ray: &Ray, intersection: &Intersection) -> f64 {
-  let hit_point = ray.at(intersection.distance);
-  let normal = intersection.object.pos - hit_point;
-  let light_vec = hit_point - camera.light.pos;
-
-  let light_intensity = camera.light.intensity;
-  let light_power = (normal.normalize().dot(&light_vec.normalize()) as f64).max(0.0) * light_intensity;
-  let light_reflected = 2.0 / std::f64::consts::PI;
-  return light_power * light_reflected;
-}
+//fn get_color(camera: &OrthoCamera, ray: &Ray, intersection: &Intersection) -> Color {
+//  let hit_point = ray.at(intersection.distance);
+//  let normal = intersection.object.pos - hit_point;
+//  let light_vec = hit_point - camera.light.pos;
+//
+//  let light_intensity = camera.light.intensity;
+//  let light_power = (normal.normalize().dot(&light_vec.normalize()) as f64).max(0.0) * light_intensity;
+//  let light_reflected = 2.0 / std::f64::consts::PI;
+//  let total_light: f32 = light_power * light_reflected;
+//
+//  return color;
+//}
 
 fn main() {
   let mut camera = OrthoCamera {
@@ -175,10 +177,13 @@ fn main() {
     let y: f64 = rng.gen::<f64>() * 250.0;
     let z: f64 = rng.gen::<f64>() * 250.0;
     let radius: f64 = rng.gen::<f64>() * 40.0;
+    let red: f64 = rng.gen::<f64>() * 100.0;
+    let green: f64 = rng.gen::<f64>() * 100.0;
+    let blue: f64 = rng.gen::<f64>() * 100.0;
     let sphere = Sphere {
       pos: Vec3::new(x, y, 100.0),
       radius: radius,
-      material: Material::new(Color::new(120.0, 0.0, 0.0), 2.0, SurfaceType::Reflective { reflectivity: 1.0 })
+      material: Material::new(Color::new(red, green, blue), 2.0, SurfaceType::Reflective { reflectivity: 1.0 })
     };
     camera.spheres.push(sphere);
     //camera.spheres.push(Sphere::new(Vec3::new(x, y, 100.0), radius));
@@ -193,7 +198,7 @@ fn main() {
         let hit_point = ray.at(intersection.distance);
         let normal = hit_point - intersection.object.pos;
         let light_dir = hit_point - camera.light.pos;
-        let light_color = get_color(&camera, &ray, &intersection);
+        let light_color = &intersection.object.material.coloration;
         let shadow_ray = Ray {
           pos: hit_point + (normal.normalize()),
           dir: -light_dir.normalize()
@@ -203,12 +208,14 @@ fn main() {
 
         let in_light = camera.trace(&shadow_ray).is_none();
         let light_intensity = if in_light { camera.light.intensity } else { 0.0 };
-        if in_light {
-          println!("in light");
-        } else {
-          println!("in shadow");
-        }
-        camera.plane.set_pixel(x, y, px!(light_color * light_intensity, 0, 0))
+        let light_power = (normal.normalize().dot(&-light_dir.normalize()) as f64).max(0.0) * light_intensity;
+        let light_reflected = 2.0 / std::f64::consts::PI;
+
+        let red = light_color.red * light_power * light_reflected;
+        let green = light_color.green * light_power * light_reflected;
+        let blue = light_color.blue * light_power * light_reflected;
+
+        camera.plane.set_pixel(x, y, px!(red, green, blue))
       },
       None => { }
     }
