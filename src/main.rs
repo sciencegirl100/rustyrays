@@ -46,7 +46,10 @@ struct OrthoCamera {
   pos: Vec3<f64>,
   plane: bmp::Image,
   spheres: Vec<Sphere>,
-  light: LightSrc
+  light: LightSrc,
+
+  shadow_bias: f64,
+  max_recursion_depth: u32
 }
 
 impl OrthoCamera {
@@ -57,19 +60,51 @@ impl OrthoCamera {
   }
 }
 
+enum SurfaceType {
+  Diffuse,
+  Reflective { reflectivity: f32 },
+}
+
+struct Material {
+  coloration: Color,
+  albedo: f32,
+  surface: SurfaceType
+}
+
+impl Material {
+  fn new(coloration: Color, albedo: f32, surface: SurfaceType) -> Material {
+    Material {
+      coloration: coloration,
+      albedo: albedo,
+      surface: surface
+    }
+  }
+}
+
+
+struct Color {
+  red: f32,
+  green: f32,
+  blue: f32
+}
+
+impl Color {
+  fn new(red: f32, green: f32, blue: f32) -> Color {
+    Color {
+      red: red,
+      green: green,
+      blue: blue
+    }
+  }
+}
+
 struct Sphere {
   pos: Vec3<f64>,
-  radius: f64
+  radius: f64,
+  material: Material,
 }
 
 impl Sphere {
-  fn new(pos: Vec3<f64>, radius: f64) -> Sphere {
-    Sphere {
-      pos: pos,
-      radius: radius
-    }
-  }
-
   // Implemented from
   // http://kylehalladay.com/blog/tutorial/math/2013/12/24/Ray-Sphere-Intersection.html
   fn intersection(&self, ray: &Ray) -> Option<f64> {
@@ -126,7 +161,9 @@ fn main() {
     pos: Vec3::new(0.0, 0.0, 0.0),
     plane: Image::new(256,256),
     spheres: Vec::new(),
-    light: LightSrc::new(Vec3::new(125.0, -100.0, 100.0), 20.0)
+    light: LightSrc::new(Vec3::new(125.0, -100.0, 100.0), 20.0),
+    shadow_bias: 1e-3,
+    max_recursion_depth: 5
   };
 
 //  camera.spheres.push(Sphere::new(Vec3::new(125.0, 75.0, 100.0), 20.0));
@@ -138,7 +175,13 @@ fn main() {
     let y: f64 = rng.gen::<f64>() * 250.0;
     let z: f64 = rng.gen::<f64>() * 250.0;
     let radius: f64 = rng.gen::<f64>() * 40.0;
-    camera.spheres.push(Sphere::new(Vec3::new(x, y, 100.0), radius));
+    let sphere = Sphere {
+      pos: Vec3::new(x, y, 100.0),
+      radius: radius,
+      material: Material::new(Color::new(120.0, 0.0, 0.0), 2.0, SurfaceType::Reflective { reflectivity: 1.0 })
+    };
+    camera.spheres.push(sphere);
+    //camera.spheres.push(Sphere::new(Vec3::new(x, y, 100.0), radius));
   }
 
   for (x, y) in camera.plane.coordinates() {
