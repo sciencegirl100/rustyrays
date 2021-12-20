@@ -129,9 +129,9 @@ fn main() {
     light: LightSrc::new(Vec3::new(125.0, -100.0, 100.0), 20.0)
   };
 
-  camera.spheres.push(Sphere::new(Vec3::new(125.0, 75.0, 100.0), 20.0));
-  camera.spheres.push(Sphere::new(Vec3::new(115.0, 175.0, 100.0), 60.0));
-  camera.spheres.push(Sphere::new(Vec3::new(0.0, 0.0, 100.0), 10.0));
+//  camera.spheres.push(Sphere::new(Vec3::new(125.0, 75.0, 100.0), 20.0));
+//  camera.spheres.push(Sphere::new(Vec3::new(115.0, 175.0, 100.0), 60.0));
+//  camera.spheres.push(Sphere::new(Vec3::new(0.0, 0.0, 100.0), 10.0));
   for i in 0..15 {
     let mut rng = rand::thread_rng();
     let x: f64 = rng.gen::<f64>() * 250.0;
@@ -142,7 +142,7 @@ fn main() {
   }
 
   for (x, y) in camera.plane.coordinates() {
-    camera.plane.set_pixel(x, y, px!(0, y, 0));
+    camera.plane.set_pixel(x, y, px!(20, 20, 20));
     let ray = Ray::new(Vec3::new(x as f64, y as f64, camera.pos.z as f64), Vec3::new(0.0, 0.0, 1.0));
     let result = camera.trace(&ray);
     match result {
