@@ -172,43 +172,5 @@ fn main() {
 
   }
 
-//  for (x, y) in camera.plane.coordinates() {
-//    for sphere in &spheres {
-//      let ray = Ray::new(Vec3::new(x as f64, y as f64, camera.pos.z as f64), Vec3::new(0.0, 0.0, 1.0));
-//      let result = sphere.intersection(&ray);
-//
-//
-//      match result {
-//        Some(distance) => {
-//          let hit = ray.at(distance);
-//          let normal = sphere.pos - hit;
-//          let light_vec = hit - light.pos;
-//
-//          let shadow_ray = Ray {
-//            pos: hit + (normal.normalize() * 1e-03),
-//            dir: -light_vec.normalize()
-//          };
-//
-//          let mut in_light = false;
-//          let mut light_calc = 0.0;
-//          for shadow_sphere in &spheres {
-//            if shadow_sphere.intersection(&shadow_ray).is_none() {
-//              in_light = true;
-//            }
-//
-//            let light_intensity = if in_light { light.intensity } else { 0.0 };
-//            let light_power = (normal.normalize().dot(&light_vec.normalize()) as f64).max(0.0) * light_intensity;
-//            let light_reflected = 2.0 / std::f64::consts::PI;
-//            light_calc = light_power * light_reflected;
-//
-//          }
-//          camera.plane.set_pixel(x, y, px!(light_calc, light_calc, light_calc));
-//
-//        }
-//        None => { },
-//      }
-//    }
-//  }
-
   let _ = camera.plane.save("img.bmp");
 }
