@@ -1,14 +1,16 @@
 use std::mem;
 
 #[macro_use]
-extern crate bmp;
+// extern crate bmp;
 extern crate rand;
 extern crate nalgebra;
 
+use wasm_bindgen::prelude::*;
 use rand::Rng;
 use nalgebra::*;
-use bmp::Image;
-use bmp::Pixel;
+// use bmp::Image;
+// use bmp::Pixel;
+
 
 struct Ray {
   pos: Vec3<f64>,
@@ -42,9 +44,36 @@ impl LightSrc {
   }
 }
 
+struct bmp2wasm {
+  width: u32,
+  height: u32,
+  pixels: Vec<u8>,
+  max_depth: u32
+}
+
+impl bmp2wasm {
+  fn new(width: u32, height: u32) -> bmp2wasm {
+    bmp2wasm {
+      width: width,
+      height: height,
+      pixels: vec![0; (width * height * 3) as usize],
+      max_depth: 5
+    }
+  }
+
+  fn set_pixel(&mut self, x: u32, y: u32, r: u8, g: u8, b: u8) {
+    let index = (y * self.width + x) * 3;
+    self.pixels[index as usize] = r;
+    self.pixels[index as usize + 1] = g;
+    self.pixels[index as usize + 2] = b;
+  }
+}
+
 struct OrthoCamera {
   pos: Vec3<f64>,
-  plane: bmp::Image,
+  // Bitmp created in this struct as camera in scene
+  // plane: bmp::Image,
+  plane: bmp2wasm,
   spheres: Vec<Sphere>,
   light: LightSrc,
 
@@ -158,19 +187,21 @@ impl<'a> Intersection<'a> {
 //  return color;
 //}
 
-fn main() {
+#[wasm_bindgen]
+pub fn rend() {
   let mut camera = OrthoCamera {
     pos: Vec3::new(0.0, 0.0, 0.0),
-    plane: Image::new(256,256),
+    // plane: Image::new(256,256), // Bitmap, TODO: replace
+    plane: bmp2wasm::new(256, 256),
     spheres: Vec::new(),
     light: LightSrc::new(Vec3::new(125.0, -100.0, 100.0), 20.0),
     shadow_bias: 1e-3,
     max_recursion_depth: 5
   };
 
-//  camera.spheres.push(Sphere::new(Vec3::new(125.0, 75.0, 100.0), 20.0));
-//  camera.spheres.push(Sphere::new(Vec3::new(115.0, 175.0, 100.0), 60.0));
-//  camera.spheres.push(Sphere::new(Vec3::new(0.0, 0.0, 100.0), 10.0));
+  // camera.spheres.push(Sphere::new(Vec3::new(125.0, 75.0, 100.0), 20.0));
+  // camera.spheres.push(Sphere::new(Vec3::new(115.0, 175.0, 100.0), 60.0));
+  // camera.spheres.push(Sphere::new(Vec3::new(0.0, 0.0, 100.0), 10.0));
   for i in 0..15 {
     let mut rng = rand::thread_rng();
     let x: f64 = rng.gen::<f64>() * 250.0;
@@ -190,7 +221,7 @@ fn main() {
   }
 
   for (x, y) in camera.plane.coordinates() {
-    camera.plane.set_pixel(x, y, px!(20, 20, 20));
+    camera.plane.set_pixel(x, y, px!(20, 20, 20)); // TODO: Replace with WASM
     let ray = Ray::new(Vec3::new(x as f64, y as f64, camera.pos.z as f64), Vec3::new(0.0, 0.0, 1.0));
     let result = camera.trace(&ray);
     match result {
@@ -215,12 +246,13 @@ fn main() {
         let green = light_color.green * light_power * light_reflected;
         let blue = light_color.blue * light_power * light_reflected;
 
-        camera.plane.set_pixel(x, y, px!(red, green, blue))
+        camera.plane.set_pixel(x, y, px!(red, green, blue)) // TODO: Replace with WASM
       },
       None => { }
     }
 
   }
 
-  let _ = camera.plane.save("img.bmp");
+  // TODO: WASM output
+  // let _ = camera.plane.save("img.bmp");
 }
